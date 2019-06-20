@@ -20,6 +20,9 @@ import android.app.Application;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
+
 import com.example.android.persistence.BasicApp;
 import com.example.android.persistence.DataRepository;
 import com.example.android.persistence.db.entity.ProductEntity;
@@ -30,7 +33,9 @@ public class ProductListViewModel extends AndroidViewModel {
     private final DataRepository mRepository;
 
     // MediatorLiveData can observe other LiveData objects and react on their emissions.
-    private final MediatorLiveData<List<ProductEntity>> mObservableProducts;
+    private final MutableLiveData<List<ProductEntity>> mObservableProducts;
+
+    private final Observer<List<ProductEntity>> observer;
 
     public ProductListViewModel(Application application) {
         super(application);
@@ -40,10 +45,10 @@ public class ProductListViewModel extends AndroidViewModel {
         mObservableProducts.setValue(null);
 
         mRepository = ((BasicApp) application).getRepository();
-        LiveData<List<ProductEntity>> products = mRepository.getProducts();
 
         // observe the changes of the products from the database and forward them
-        mObservableProducts.addSource(products, mObservableProducts::setValue);
+        observer = mObservableProducts::setValue;
+        mRepository.getProducts().observeForever(observer);
     }
 
     /**
@@ -55,5 +60,11 @@ public class ProductListViewModel extends AndroidViewModel {
 
     public LiveData<List<ProductEntity>> searchProducts(String query) {
         return mRepository.searchProducts(query);
+    }
+
+    @Override
+    protected void onCleared() {
+        mRepository.getProducts().removeObserver(observer);
+        super.onCleared();
     }
 }

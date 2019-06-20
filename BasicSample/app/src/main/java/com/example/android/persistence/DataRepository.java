@@ -3,6 +3,7 @@ package com.example.android.persistence;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import com.example.android.persistence.db.AppDatabase;
+import com.example.android.persistence.db.FakeDataSource;
 import com.example.android.persistence.db.entity.CommentEntity;
 import com.example.android.persistence.db.entity.ProductEntity;
 
@@ -18,11 +19,13 @@ public class DataRepository {
     private final AppDatabase mDatabase;
     private MediatorLiveData<List<ProductEntity>> mObservableProducts;
 
+    private FakeDataSource fakeDataSource = new FakeDataSource();
+
     private DataRepository(final AppDatabase database) {
         mDatabase = database;
         mObservableProducts = new MediatorLiveData<>();
 
-        mObservableProducts.addSource(mDatabase.productDao().loadAllProducts(),
+        mObservableProducts.addSource(fakeDataSource.loadAllProducts(),
                 productEntities -> {
                     if (mDatabase.getDatabaseCreated().getValue() != null) {
                         mObservableProducts.postValue(productEntities);
